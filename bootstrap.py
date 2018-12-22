@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 # Preamble
+import random as rng
 from nodetools import getIP, getAddr, getPriv, conn
 from os import system
-import random as rng
+from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 '''
 This script bootstraps the network.
@@ -13,23 +14,15 @@ This script bootstraps the network.
 
 
 def main():
-    existconn = []
     for i in range(1, 1001):
         # Import respective private keys to nodes
         conn(i).importprivkey(getPriv(i))
+        # Set peer list to 0
         # Connect node to 8 peers
-        for j in range(0, 8):
-            match = True
-            while match:
-                peer = rng.randint(1, 1000)
-                if peer != i and (peer in existconn == False):
-                    existconn.append(peer)
-                    existconn.append(i)
-                    match = False
-                    conn(i).addnode(getIP(
-                        peer)+':8333', 'add')
-                    print("%s ==> %s" % (str(i), str(peer)))
-            conn(i).addnode(getIP(randint(1,1000))+':8333', 'add')
+        peers = rng.sample(range(1,1001),8)
+        for peer in peers:
+            conn(i).addnode(getIP(peer)+':8333','add')
+            print("%s ==> %s" % (str(i), str(peer)))
     # Mine 200000 blocks to node 1, 199900 blocks of immediately spendable rewards, 9995000 BTC.
     for i in range(1, 2001):
         conn(1).generatetoaddress(
@@ -44,4 +37,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
