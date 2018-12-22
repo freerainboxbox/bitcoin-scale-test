@@ -33,6 +33,8 @@ def main():
     for i in range(0, 1000, 10):
         conn(1).sendmany("", {getAddr(i+1): 9800, getAddr(i+2): 9800, getAddr(i+3): 9800, getAddr(i+4): 9800, getAddr(
             i+5): 9800, getAddr(i+6): 9800, getAddr(i+7): 9800, getAddr(i+8): 9800, getAddr(i+9): 9800, getAddr(i+10): 9800})
+    conn(1).generatetoaddress(
+            1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
 
 
 if __name__ == "__main__":
