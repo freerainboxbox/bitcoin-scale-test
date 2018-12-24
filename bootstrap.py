@@ -24,10 +24,11 @@ def main():
             conn(i).addnode(getIP(peer)+':8333','add')
             print("%s ==> %s" % (str(i), str(peer)))
     # Mine 200000 blocks to node 1, 199900 blocks of immediately spendable rewards, 9995000 BTC.
-    for i in range(1, 2001):
-        conn(1).generatetoaddress(
-            100, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
-        print("Block %s00" % i)
+    # Uncomment next 4 lines if not on pregen image 
+    # for i in range(1, 2001):
+    #    conn(1).generatetoaddress(
+    #        100, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
+    #    print("Block %s00" % i)
     # Endow each address with 9800 BTC.
     # Each transaction has 10 outputs, 100 transactions total.
     for i in range(0, 1000, 10):
