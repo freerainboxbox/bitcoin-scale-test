@@ -13,7 +13,7 @@ This script automates data collection and transaction gossip.
 Network must be bootstrapped first, see bootstrap.py.
 
 There are a total of ~156816000 transactions in this experiment of 5 days with 120 TPS periods.
-720 blocks will be mined on top of the 200000 initial reward generation, yielding 4720 blocks.
+720 blocks will be mined on top of the 1322 initial reward generation, yielding 2042 blocks.
 
 Use jgarzik/python-bitcoinrpc for making JSON-RPC calls.
 
@@ -92,8 +92,8 @@ def query(tps):
             print(tps)
             # Wait for the inverse of TPS period, or tps^-1
             sleep(1/tps)
-            # Query nodesend to send 5460 satoshis (the dust limit) to noderecv
-            conn(nodesend).sendtoaddress(getAddr(noderecv), 0.00005460)
+            # Query nodesend to send 1 satoshi (new dust limit) to noderecv
+            conn(nodesend).sendtoaddress(getAddr(noderecv), 0.00000001)
             return (str(nodesend), str(noderecv))
 
 
