@@ -33,6 +33,7 @@ def main():
     for i in range(0, 1000, 10):
         conn(1).sendmany("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
             i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8})
+    # Height 1323
     conn(1).generatetoaddress(
             1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
 

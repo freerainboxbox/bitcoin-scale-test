@@ -13,7 +13,7 @@ This script automates data collection and transaction gossip.
 Network must be bootstrapped first, see bootstrap.py.
 
 There are a total of ~156816000 transactions in this experiment of 5 days with 120 TPS periods.
-720 blocks will be mined on top of the 1322 initial reward generation, yielding 2042 blocks.
+720 blocks will be mined on top of the 1323 initial reward generation, yielding 2043 blocks.
 
 Use jgarzik/python-bitcoinrpc for making JSON-RPC calls.
 
