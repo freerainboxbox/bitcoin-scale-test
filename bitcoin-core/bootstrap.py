@@ -25,6 +25,7 @@ def main():
             print("%s ==> %s" % (str(i), str(peer)))
     # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 BTC.
     # Comment out next 3 lines if on pregen image
+    print("P2P bootstrapped. Generating 1322 blocks...")
     conn(1).generatetoaddress(
         1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
     print("Mined 1322")
