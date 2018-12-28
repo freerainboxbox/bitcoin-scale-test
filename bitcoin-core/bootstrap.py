@@ -24,7 +24,7 @@ def main():
             conn(i).addnode(getIP(peer)+':8333','add')
             print("%s ==> %s" % (str(i), str(peer)))
     # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 BTC.
-    # Comment out next 4 lines if on pregen image
+    # Comment out next 3 lines if on pregen image
     conn(1).generatetoaddress(
         1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
     print("Mined 1322")
