@@ -7,6 +7,8 @@ from subprocess import check_output
 from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
+from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+import socket
 
 '''
 This script automates data collection and transaction gossip.
@@ -35,8 +37,12 @@ def main():
     timeout = genesis+432000
     while int(time()) <= timeout:
         # The input of query() is equivalent to the current TPS.
-        nodeboth = query((floor((int(time())-genesis)/3600+1)))
-        print("From %s to %s" % nodeboth)
+        try:
+            nodeboth = query((floor((int(time())-genesis)/3600+1)))
+            print("From %s to %s" % nodeboth)
+        except socket.error:
+            print("Node %s is having trouble sending to node %s, skipping." % (nodeboth[0],nodeboth[1]))
+            pass
         # 600 seconds is the block time, mine if 600 seconds have passed.
         if (int(time())-genesis) % 600 == 0:
             # Mine 1 block, store miner ID
@@ -82,25 +88,28 @@ def main():
 
 
 def query(tps):
-    match = True
-    while match:
-        # Generate node IDs
-        nodesend = rng.randint(1, 1000)
-        noderecv = rng.randint(1, 1000)
-        if nodesend != noderecv:
-            match = False
-            print(tps)
-            # Wait for the inverse of TPS period, or tps^-1
-            sleep(1/tps)
-            # Query nodesend to send 1 satoshi (new dust limit) to noderecv
-            conn(nodesend).sendtoaddress(getAddr(noderecv), 0.00000001)
-            return (str(nodesend), str(noderecv))
+    # Generate node IDs
+    nodes = rng.sample(range(1,1001),2)
+    print(tps)
+    # Wait for the inverse of TPS period, or tps^-1
+    sleep(1/tps)
+    # Query nodes[0] to send 1 satoshi (new dust limit) to nodes[1]
+    try:
+        conn(nodes[0]).sendtoaddress(getAddr(nodes[1]), 0.00000001)
+        return (str(nodes[0]), str(nodes[1]))
+    except JSONRPCException:
+        print("%s does not have enough funds to send to %s." % (str(nodes[0]), str(nodes[1])))
 
 
 def mine():
-    nodemine = rng.randint(1, 1000)
-    conn(nodemine).generatetoaddress(1,getAddr(nodemine))
-    return nodemine
+    while True:
+        nodemine = rng.randint(1, 1000)
+        try:
+            conn(nodemine).generatetoaddress(1,getAddr(nodemine))
+            return nodemine
+        except socket.error:
+            print("Node %s did nto respond to mining request. Changing miner..." % nodemine)
+            pass
 
 
 if __name__ == "__main__":

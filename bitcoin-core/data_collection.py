@@ -5,7 +5,8 @@ from nodetools import conn
 from statistics import median
 from math import floor
 from time import time
-from random import randint
+import random as rng
+import socket
 
 '''
 These functions collect the dependent variables (DVs).
@@ -22,7 +23,10 @@ def minFee():
     fee = []
     # Get fee for all nodes (maximum wait time is 1008 blocks)
     for i in range(1, 1001):
-        rawfee.append(conn(i).estimatesmartfee(1008))
+        try:
+            rawfee.append(conn(i).estimatesmartfee(1008))
+        except socket.error:
+            print("Trouble getting minfee from node %s, skipping." % str(i))
     for i in range(0, 1000):
         try:
             # When the mempool isn't large enough
@@ -48,61 +52,77 @@ def medFee(tps):
     # TPS interval start block height
     startht = tps * 6 + 200001
     # Get data from 3 nodes
-    match = True
-    while match:
-        data1 = randint(1,1000)
-        data2 = randint(1,1000)
-        data3 = randint(1,1000)
-        if data1 != data2 != data3:
-            match = False
-            for i in [data1, data2, data3]:
-                feelist = []
-                # Serialized block with txhashes
-                rawblock = []
-                # List of txhashes
-                txlist = []
-                # List of inputs/outputs
-                vins = []
-                vouts = []
-                for j in range(startht, startht + 7):
-                    # Get serialized block
-                    rawblock = conn(i).getblock(conn(i).getblockhash(j))
-                    # Get transaction hash list
-                    txlist = rawblock["tx"]
-                    for txhash in txlist:
-                        # Coinbase error flag
-                        skipflag = True
-                        # Input/output values
-                        invals = []
-                        outvals = []
+    while True:
+        nodes = rng.sample(range(1,1001),3)
+        for i in nodes:
+            feelist = []
+            # Serialized block with txhashes
+            rawblock = []
+            # List of txhashes
+            txlist = []
+            # List of inputs/outputs
+            vins = []
+            vouts = []
+            # Method of escaping faulty requests
+            badnode = 0
+            for j in range(startht, startht + 7):
+                # Get serialized block
+                while True:
+                    try:
+                        # Modulo 1000 to prevent node selection out of range.
+                        rawblock = conn((i + badnode) % 1000).getblock(conn((i + badnode) % 1000).getblockhash(j))
+                        break
+                    except socket.error:
+                        print("Problem getting block from %s, retrying." % str((i + badnode) % 1000))
+                        badnode += 1
+                # Get transaction hash list
+                txlist = rawblock["tx"]
+                for txhash in txlist:
+                    # Coinbase error flag
+                    skipflag = True
+                    # Input/output values
+                    invals = []
+                    outvals = []
+                    while True:
                         # Get raw transaction
-                        tx = conn(i).getrawtransaction(txhash, 1)
-                        # Get input and output objects
-                        vins = tx["vin"]
-                        vouts = tx["vout"]
-                        # List of input reference hashes to be looked up for values
-                        vinhash = []
-                        # Acquire input values list
-                        for vin in vins:
-                            # Append vin ID and index as list to vinhash
-                            try:
-                                vinhash.append([vin["txid"], vin["vout"]])
-                                for k in range(0, len(vinhash)+1):
-                                    # Get input value
-                                    invals.append(conn(i).getrawtransaction(
-                                        vinhash[k][0], 1)["vout"][vinhash[k][1]]["value"])
-                            except KeyError:
-                                # If reference input is coinbase, it will most likely be the reason for a KeyError.
-                                print("Transaction 0x%s is likely a coinbase reference. Skipping..." % txhash)
-                                skipflag = False
-                                break
-                        # Acquire output values list
-                        if skipflag:
-                            for vout in vouts:
-                                # Get output value
-                                outvals.append(vout["value"])
-                            # Calculate difference between inputs and outputs, yields fee
-                            feelist.append(sum(vins)-sum(vouts))
+                        try:
+                            tx = conn((i + badnode) % 1000).getrawtransaction(txhash, 1)
+                            break
+                        except socket.error:
+                            print("Problem getting raw tx from %s, retrying." % str((i + badnode) % 1000))
+                            badnode += 1
+                    # Get input and output objects
+                    vins = tx["vin"]
+                    vouts = tx["vout"]
+                    # List of input reference hashes to be looked up for values
+                    vinhash = []
+                    # Acquire input values list
+                    for vin in vins:
+                        # Append vin ID and index as list to vinhash
+                        try:
+                            vinhash.append([vin["txid"], vin["vout"]])
+                            for k in range(0, len(vinhash)+1):
+                                # Get input value
+                                while True:
+                                    try:
+                                        invals.append(conn((i + badnode) % 1000).getrawtransaction(
+                                            vinhash[k][0], 1)["vout"][vinhash[k][1]]["value"])
+                                        break
+                                    except socket.error:
+                                        print("Problem getting input value of transaction from %s, retrying." % str((i + badnode) % 1000))
+                                        badnode += 1
+                        except KeyError:
+                            # If reference input is coinbase, it will most likely be the reason for a KeyError.
+                            print("Transaction 0x%s is likely a coinbase reference. Skipping..." % txhash)
+                            skipflag = False
+                            break
+                    # Acquire output values list
+                    if skipflag:
+                        for vout in vouts:
+                            # Get output value
+                            outvals.append(vout["value"])
+                        # Calculate difference between inputs and outputs, yields fee
+                        feelist.append(sum(vins)-sum(vouts))
     if skipflag:
         # return median fee in satoshis
         return int(median(feelist) * 100000000)
@@ -112,5 +132,8 @@ def medFee(tps):
 def memPool():
     size = []
     for i in range(1, 1001):
-        size.append(conn(i).getmempoolinfo()['size'])
+        try:
+            size.append(conn(i).getmempoolinfo()['size'])
+        except socket.error:
+            print("Problem getting mempool size from %s, skipping." % str(i))
     return int(median(size))
