@@ -108,7 +108,7 @@ def mine():
             conn(nodemine).generatetoaddress(1,getAddr(nodemine))
             return nodemine
         except socket.error:
-            print("Node %s did nto respond to mining request. Changing miner..." % nodemine)
+            print("Node %s did not respond to mining request. Changing miner..." % nodemine)
             pass
 
 
