@@ -50,7 +50,7 @@ def main():
             print("Mined by %s" % str(nodemine))
             sleep(1)
             # Query miner node what the block count is, check if a multiple of 6
-            if (conn(nodemine).getblockchaininfo()["blocks"]) - 200001 % 6 == 0:
+            if (conn(nodemine).getblockchaininfo()["blocks"]) - 1323 % 6 == 0:
                 # Get median fee of previous completed TPS interval
                 AtomMedFee = open("AtomMedFee.csv", "a")
                 AtomMinFee = open("AtomMinFee.csv", "a")
