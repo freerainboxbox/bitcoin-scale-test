@@ -38,7 +38,7 @@ def minFee():
                     fee.append(rawfee[j]['feerate'] * 100000000)
                 # output median of fee list in satoshis
                 return int(median(fee))
-        except KeyError:
+        except:
             # Occasionally, there will be a KeyError. If so, return None.
             pass
 
@@ -134,6 +134,6 @@ def memPool():
     for i in range(1, 1001):
         try:
             size.append(conn(i).getmempoolinfo()['size'])
-        except socket.error:
+        except:
             print("Problem getting mempool size from %s, skipping." % str(i))
     return int(median(size))

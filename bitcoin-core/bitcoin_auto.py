@@ -27,6 +27,7 @@ Use jgarzik/python-bitcoinrpc for making JSON-RPC calls.
 This version requires the command node to be large enough to handle
 120 RPC requests per second, plus dependent variable I/O.
 '''
+# BUG: Need to parallelize processes. Not suitable for further experimentation until fixed.
 
 def main():
     # Seed the RNG through GnuPG

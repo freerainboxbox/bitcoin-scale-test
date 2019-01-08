@@ -9,7 +9,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 This script bootstraps the network.
 1. Give each node their vanity private key.
 2. Have node 1 mine 1322 blocks.
-3. Send 14.8 BTC to every node.
+3. Send 14.8 LTC to every node.
 '''
 
 
@@ -23,13 +23,13 @@ def main():
         for peer in peers:
             conn(i).addnode(getIP(peer)+':8333','add')
             print("%s ==> %s" % (str(i), str(peer)))
-    # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 BTC.
+    # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 LTC.
     # Comment out next 3 lines if on pregen image
     print("P2P bootstrapped. Generating 1322 blocks...")
     conn(1).generatetoaddress(
         1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
     print("Mined 1322")
-    # Endow each address with 14.8 BTC.
+    # Endow each address with 14.8 LTC.
     # Each transaction has 10 outputs, 100 transactions total.
     for i in range(0, 1000, 10):
         conn(1).sendmany("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
