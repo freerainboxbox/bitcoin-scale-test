@@ -9,6 +9,7 @@ from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 import socket
+import threading
 
 '''
 This script automates data collection and transaction gossip.
@@ -28,6 +29,26 @@ This version requires the command node to be large enough to handle
 120 RPC requests per second, plus dependent variable I/O.
 '''
 # BUG: Need to parallelize processes. Not suitable for further experimentation until fixed.
+
+class RPCall (threading.Thread):
+    def __init__(self, reqnum, node, method, args):
+        # Request number within a second (from 1 to TPS interval)
+        self.reqnum=int(reqnum)
+        # Node Identifier
+        self.node=int(node)
+        # JSON-RPC Method
+        self.method=str(method)
+        # JSON-RPC Method arguments
+        self.args=tuple(args)
+    def sendcall(self):
+        try:
+            # TODO: Add logic for sending calls.
+            conn(self.node).self.method(self.args)
+            # Exit with 0, no exception
+            return(self.node,self.method,self.args,0,None)
+        except JSONRPCException as e:
+            # Exit with 1, exception and body.
+            return(self.node,self.method,self.args,1,e)
 
 def main():
     # Seed the RNG through GnuPG
