@@ -50,7 +50,7 @@ By getting transactions' total input and output, the fees can be calculated by f
 '''
 def medFee(tps):
     # TPS interval start block height
-    startht = tps * 6 + 200001
+    startht = tps * 6 + 1323
     # Get data from 3 nodes
     while True:
         nodes = rng.sample(range(1,1001),3)
