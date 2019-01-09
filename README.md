@@ -13,3 +13,5 @@ Uses the subnet 142.0.0.0/20. Modify the `getIP()` function for your own use.
 Will add more blockchains moving forward, including Ethereum.
 
 Also includes sequential vanity addresses with private keys for nodes 0000 to 2000 (only 1000 were used).
+
+Not ready for use, adding threading logic.
