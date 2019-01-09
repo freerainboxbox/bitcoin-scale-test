@@ -8,6 +8,7 @@ from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from settings import genesis, timeout
 
 '''
 This script automates data collection and transaction gossip.
@@ -26,7 +27,7 @@ Use jgarzik/python-bitcoinrpc for making JSON-RPC calls.
 This version requires the command node to be large enough to handle
 120 RPC requests per second, plus dependent variable I/O.
 '''
-# BUG: Need to parallelize processes. Not suitable for further experimentation until fixed.
+
 
 def main():
     # Seed the RNG through GnuPG
@@ -34,7 +35,8 @@ def main():
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
         batchSend((floor((int(time())-genesis)/3600+1)))
-        mine()
+        tocollect = mine()
+        collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 
 # Originally called query()
@@ -57,17 +59,35 @@ def batchSend(tps):
 def mine():
     if (int(time())-genesis) % 600 == 0:
         nodemine = rng.randint(1,1001)
-        RPCall(0,nodemine,"generatetoaddress",getAddr(nodemine),"Mined by %s" % str(nodemine))
+        generate = RPCall(0,nodemine,"generatetoaddress",(1,getAddr(nodemine)),"Mined by %s" % str(nodemine))
+        generate.start()
+        generate.join()
+        if (conn(nodemine).getblockchaininfo()["blocks"]) - 1323 % 6 == 0:
+            return 2
+        else:
+            return 1
+    elif (int(time())-genesis) % 10 == 0:
+        return 1
+    else:
+        return 0
 
 # The following are booleans, not the functions from data_collection.
-def collect(minfee,medfee,mempool):
-    pass
-    # TODO: Add collector
-
-
+def collect(tocollect):
+    threads = []
+    if tocollect == 0:
+        start = False
+    elif tocollect == 1:
+        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        start = True
+    elif tocollect == 2:
+        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        start = True
+    if start:
+        for thread in threads:
+            thread.start()
+    
 if __name__ == "__main__":
-    # Set local experiment start time as Epoch
-    genesis = int(time())
-    # Set end time as Epoch
-    timeout = genesis+432000
     main()

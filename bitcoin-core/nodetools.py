@@ -2,10 +2,12 @@
 # Preamble
 import csv
 import threading
+from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from socket import error as socketerror
 from data_collection import minFee, medFee, memPool
+from time import time
 
 # These are some functions used for getting data about nodes themselves.
 
@@ -78,5 +80,22 @@ class RPCall (threading.Thread):
             return(self.node,self.method,self.args,1,str(e))
 
 class DataCollector (threading.Thread):
-    pass
+    def __init__(self, dependent, tps):
+        self.dependent=int(dependent)
+        self.tps=int(tps)
+        assert 1<=self.dependent<=3
+        assert 1<=self.tps<=120
+    def run(self):
+        if self.dependent == 1:
+            AtomMinFee = open("AtomMinFee.csv", "a")
+            AtomMinFee.write("%s,%s,AtomMinFee" % (str(int(time())-genesis),str(minFee())))
+            AtomMinFee.close()
+        elif self.dependent == 2:
+            AtomMedFee = open("AtomMedFee.csv", "a")
+            AtomMedFee.write("%s,%s,AtomMedFee" % (str(int(time())-genesis),str(medFee(self.tps))))
+            AtomMedFee.close()
+        elif self.dependent == 3:
+            MemPool = open("MemPool.csv", "a")
+            MemPool.write("%s,%s,MemPool"% (str(int(time())-genesis),str(memPool())))
+            MemPool.close()
     # TODO: Define collection thread for three booleans for each DV.
