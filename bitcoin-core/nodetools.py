@@ -1,8 +1,13 @@
 #!/usr/bin/python3
 # Preamble
 import csv
+import threading
+from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from socket import error as socketerror
+from data_collection import minFee, medFee, memPool
+from time import time
 
 # These are some functions used for getting data about nodes themselves.
 
@@ -47,3 +52,50 @@ def getPriv(node):
 def conn(node):
     # Set python-bitcoinrpc credentials
     return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
+
+# Class definition of an RPC call thread.
+class RPCall (threading.Thread):
+    def __init__(self, reqnum, node, method, args, extra):
+        # Request number within a second (from 1 to TPS interval)
+        self.reqnum = int(reqnum)
+        # Node Identifier
+        self.node = int(node)
+        # JSON-RPC Method
+        self.method = str(method)
+        # JSON-RPC Method arguments
+        self.args = tuple(args)
+        # Extra string to print at end
+        self.extra = extra
+        # If request number is 0, the request is a generatetoaddress call.
+        assert 0 <= self.reqnum <= 120
+        assert 1 <= self.node <= 120
+    def run(self):
+        try:
+            # TODO: Add logic for sending calls.
+            conn(self.node).self.method(self.args)
+            # Exit with 0, no exception (Not in use yet)
+            return(self.node,self.method,self.args,0,None)
+        except (JSONRPCException, socketerror) as e:
+            # Exit with 1 with exception body (Not in use yet)
+            return(self.node,self.method,self.args,1,str(e))
+
+class DataCollector (threading.Thread):
+    def __init__(self, dependent, tps):
+        self.dependent=int(dependent)
+        self.tps=int(tps)
+        assert 1<=self.dependent<=3
+        assert 1<=self.tps<=120
+    def run(self):
+        if self.dependent == 1:
+            AtomMinFee = open("AtomMinFee.csv", "a")
+            AtomMinFee.write("%s,%s,AtomMinFee" % (str(int(time())-genesis),str(minFee())))
+            AtomMinFee.close()
+        elif self.dependent == 2:
+            AtomMedFee = open("AtomMedFee.csv", "a")
+            AtomMedFee.write("%s,%s,AtomMedFee" % (str(int(time())-genesis),str(medFee(self.tps))))
+            AtomMedFee.close()
+        elif self.dependent == 3:
+            MemPool = open("MemPool.csv", "a")
+            MemPool.write("%s,%s,MemPool"% (str(int(time())-genesis),str(memPool())))
+            MemPool.close()
+    # TODO: Define collection thread for three booleans for each DV.
