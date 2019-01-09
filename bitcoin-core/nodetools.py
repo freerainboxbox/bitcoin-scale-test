@@ -79,6 +79,7 @@ class RPCall (threading.Thread):
             # Exit with 1 with exception body (Not in use yet)
             return(self.node,self.method,self.args,1,str(e))
 
+# Class definition of a combined data collector thread.
 class DataCollector (threading.Thread):
     def __init__(self, dependent, tps):
         self.dependent=int(dependent)
@@ -92,7 +93,7 @@ class DataCollector (threading.Thread):
             AtomMinFee.close()
         elif self.dependent == 2:
             AtomMedFee = open("AtomMedFee.csv", "a")
-            AtomMedFee.write("%s,%s,AtomMedFee" % (str(int(time())-genesis),str(medFee(self.tps))))
+            AtomMedFee.write("%s,%s,AtomMedFee" % (str(self.tps),str(medFee(self.tps))))
             AtomMedFee.close()
         elif self.dependent == 3:
             MemPool = open("MemPool.csv", "a")
