@@ -98,4 +98,3 @@ class DataCollector (threading.Thread):
             MemPool = open("MemPool.csv", "a")
             MemPool.write("%s,%s,MemPool"% (str(int(time())-genesis),str(memPool())))
             MemPool.close()
-    # TODO: Define collection thread for three booleans for each DV.
