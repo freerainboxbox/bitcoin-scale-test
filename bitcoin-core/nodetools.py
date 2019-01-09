@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 # Preamble
 import csv
+import threading
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from socket import error as socketerror
+from data_collection import minFee, medFee, memPool
 
 # These are some functions used for getting data about nodes themselves.
 
@@ -47,3 +50,33 @@ def getPriv(node):
 def conn(node):
     # Set python-bitcoinrpc credentials
     return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
+
+# Class definition of an RPC call thread.
+class RPCall (threading.Thread):
+    def __init__(self, reqnum, node, method, args, extra):
+        # Request number within a second (from 1 to TPS interval)
+        self.reqnum = int(reqnum)
+        # Node Identifier
+        self.node = int(node)
+        # JSON-RPC Method
+        self.method = str(method)
+        # JSON-RPC Method arguments
+        self.args = tuple(args)
+        # Extra string to print at end
+        self.extra = extra
+        # If request number is 0, the request is a generatetoaddress call.
+        assert 0 <= self.reqnum <= 120
+        assert 1 <= self.node <= 120
+    def run(self):
+        try:
+            # TODO: Add logic for sending calls.
+            conn(self.node).self.method(self.args)
+            # Exit with 0, no exception (Not in use yet)
+            return(self.node,self.method,self.args,0,None)
+        except (JSONRPCException, socketerror) as e:
+            # Exit with 1 with exception body (Not in use yet)
+            return(self.node,self.method,self.args,1,str(e))
+
+class DataCollector (threading.Thread):
+    pass
+    # TODO: Define collection thread for three booleans for each DV.
