@@ -38,7 +38,7 @@ def minFee():
                     fee.append(rawfee[j]['feerate'] * 100000000)
                 # output median of fee list in satoshis
                 return int(median(fee))
-        except KeyError:
+        except:
             # Occasionally, there will be a KeyError. If so, return None.
             pass
 
@@ -50,7 +50,7 @@ By getting transactions' total input and output, the fees can be calculated by f
 '''
 def medFee(tps):
     # TPS interval start block height
-    startht = tps * 6 + 200001
+    startht = tps * 6 + 1323
     # Get data from 3 nodes
     while True:
         nodes = rng.sample(range(1,1001),3)
@@ -134,6 +134,6 @@ def memPool():
     for i in range(1, 1001):
         try:
             size.append(conn(i).getmempoolinfo()['size'])
-        except socket.error:
+        except:
             print("Problem getting mempool size from %s, skipping." % str(i))
     return int(median(size))

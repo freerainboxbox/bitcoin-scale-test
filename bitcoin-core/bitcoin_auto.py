@@ -71,7 +71,6 @@ def mine():
     else:
         return 0
 
-# The following are booleans, not the functions from data_collection.
 def collect(tocollect):
     threads = []
     if tocollect == 0:

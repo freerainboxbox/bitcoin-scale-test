@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # Preamble
-from nodetools import getIP, getAddr, conn
+from nodetools import getIP, getAddr, conn, RPCall, DataCollector
 # from os import system
 import random as rng
 from subprocess import check_output
@@ -8,13 +8,13 @@ from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
-import socket
+from settings import genesis, timeout
 
 '''
 This script automates data collection and transaction gossip.
 Network must be bootstrapped first, see bootstrap.py.
 
-There are a total of ~156816000 transactions in this experiment of 5 days with 120 TPS periods.
+There are a total of ~26136000 transactions in this experiment of 5 days with 120 TPS periods.
 720 blocks will be mined on top of the 1323 initial reward generation, yielding 2043 blocks.
 
 Use jgarzik/python-bitcoinrpc for making JSON-RPC calls.
@@ -28,89 +28,66 @@ This version requires the command node to be large enough to handle
 120 RPC requests per second, plus dependent variable I/O.
 '''
 
+
 def main():
     # Seed the RNG through GnuPG
     rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
-    # Set local experiment start time as Epoch
-    genesis = int(time())
-    # Set end time as Epoch
-    timeout = genesis+432000
     while int(time()) <= timeout:
-        # The input of query() is equivalent to the current TPS.
-        try:
-            nodeboth = query((floor((int(time())-genesis)/3600+1)))
-            print("From %s to %s" % nodeboth)
-        except socket.error:
-            print("Node %s is having trouble sending to node %s, skipping." % (nodeboth[0],nodeboth[1]))
-            pass
-        # 600 seconds is the block time, mine if 600 seconds have passed.
-        if (int(time())-genesis) % 600 == 0:
-            # Mine 1 block, store miner ID
-            nodemine = mine()
-            print("Mined by %s" % str(nodemine))
-            sleep(1)
-            # Query miner node what the block count is, check if a multiple of 6
-            if (conn(nodemine).getblockchaininfo()["blocks"]) - 1323 % 6 == 0:
-                # Get median fee of previous completed TPS interval
-                AtomMedFee = open("AtomMedFee.csv", "a")
-                AtomMinFee = open("AtomMinFee.csv", "a")
-                MemPool = open("MemPool.csv", "a")
-                AtomMedFee.write("%s,%s,bitcoin-mini\n" % (int(time()-genesis),
-                                                           medFee(floor((int(time()-genesis)/3600)-1))))
-                AtomMinFee.write("%s,%s,bitcoin-mini\n" %
-                                 (int(time()-genesis), minFee()))
-                MemPool.write("%s,%s,bitcoin-mini\n" %
-                              (int(time()-genesis), memPool()))
-                AtomMedFee.close()
-                AtomMinFee.close()
-                MemPool.close()
-            else:
-                # Skip median fee
-                AtomMinFee = open("AtomMinFee.csv", "a")
-                MemPool = open("MemPool.csv", "a")
-                AtomMinFee.write("%s,%s,bitcoin-mini\n" %
-                                 (int(time()-genesis), minFee()))
-                MemPool.write("%s,%s,bitcoin-mini\n" %
-                              (int(time()-genesis), memPool()))
-                AtomMinFee.close()
-                MemPool.close()
-        elif (int(time())-genesis) % 10 == 0:
-            # Skip median fee
-            AtomMinFee = open("AtomMinFee.csv", "a")
-            MemPool = open("MemPool.csv", "a")
-            AtomMinFee.write("%s,%s,bitcoin-mini\n" %
-                             (int(time()-genesis), minFee()))
-            MemPool.write("%s,%s,bitcoin-mini\n" %
-                          (int(time()-genesis), memPool()))
-            AtomMinFee.close()
-            MemPool.close()
-        #If not a multiple of 10 or 600 seconds, skip and query again.
+        # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
+        batchSend((floor((int(time())-genesis)/3600+1)))
+        tocollect = mine()
+        collect(tocollect)
+    print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 
-
-def query(tps):
-    # Generate node IDs
-    nodes = rng.sample(range(1,1001),2)
-    print(tps)
-    # Wait for the inverse of TPS period, or tps^-1
-    sleep(1/tps)
-    # Query nodes[0] to send 1 satoshi (new dust limit) to nodes[1]
-    try:
-        conn(nodes[0]).sendtoaddress(getAddr(nodes[1]), 0.00000001)
-        return (str(nodes[0]), str(nodes[1]))
-    except JSONRPCException:
-        print("%s does not have enough funds to send to %s." % (str(nodes[0]), str(nodes[1])))
+# Originally called query()
+def batchSend(tps):
+    txns = {}
+    node = {}
+    for i in range(1,tps+1):
+        # Generate node IDs
+        node[i] = rng.sample(range(1,1001),2)
+        # Query node[i][0] to send 1 satoshi (new dust limit) to node[i][1]
+        #conn(nodes[0]).sendtoaddress(getAddr(nodes[1]), 0.00000001)
+        #return (str(nodes[0]), str(nodes[1]))
+    for i in range(1,tps+1):
+        txns[i] = RPCall(i, node[i][0], "sendtoaddress", (getAddr(node[i][1]),0.00000001),"From %s to %s" % (node[i][0],node[i][1]))
+    for i in range(1,tps+1):
+        txns[i].start()
+        sleep(1/tps)
 
 
 def mine():
-    while True:
-        nodemine = rng.randint(1, 1000)
-        try:
-            conn(nodemine).generatetoaddress(1,getAddr(nodemine))
-            return nodemine
-        except socket.error:
-            print("Node %s did not respond to mining request. Changing miner..." % nodemine)
-            pass
+    if (int(time())-genesis) % 600 == 0:
+        nodemine = rng.randint(1,1001)
+        generate = RPCall(0,nodemine,"generatetoaddress",(1,getAddr(nodemine)),"Mined by %s" % str(nodemine))
+        generate.start()
+        generate.join()
+        if (conn(nodemine).getblockchaininfo()["blocks"]) - 1323 % 6 == 0:
+            return 2
+        else:
+            return 1
+    elif (int(time())-genesis) % 10 == 0:
+        return 1
+    else:
+        return 0
 
-
+# The following are booleans, not the functions from data_collection.
+def collect(tocollect):
+    threads = []
+    if tocollect == 0:
+        start = False
+    elif tocollect == 1:
+        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        start = True
+    elif tocollect == 2:
+        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
+        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        start = True
+    if start:
+        for thread in threads:
+            thread.start()
+    
 if __name__ == "__main__":
     main()
