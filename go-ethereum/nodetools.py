@@ -4,7 +4,8 @@ import csv
 import threading
 from settings import genesis, timeout
 from subprocess import call
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+#from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from web3 import Web3,personal
 from socket import error as socketerror
 from data_collection import minFee, medFee, memPool
 from time import time
@@ -47,12 +48,7 @@ def getPriv(node):
     with open("addresses.csv") as addresses:
         addrlist = list(csv.reader(addresses))
         return addrlist[node][2]
-
-
-def conn(node):
-    # Set python-bitcoinrpc credentials
-    return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
-
+'''
 # Class definition of an RPC call thread.
 class RPCall (threading.Thread):
     def __init__(self, reqnum, node, method, args, extra):
@@ -71,13 +67,13 @@ class RPCall (threading.Thread):
         assert 1 <= self.node <= 120
     def run(self):
         try:
-            # TODO: Add logic for sending calls.
-            conn(self.node).self.method(self.args)
+            # Executes a string in the format below
+            exec("conn(%s).%s%s" % (self.node,self.method,self.args))
             # Exit with 0, no exception (Not in use yet)
             return(self.node,self.method,self.args,0,None)
-        except (JSONRPCException, socketerror) as e:
-            # Exit with 1 with exception body (Not in use yet)
-            return(self.node,self.method,self.args,1,str(e))
+        except:
+            # Exit with 1 (Not in use yet)
+            return(self.node,self.method,self.args,1)
 
 # Class definition of a combined data collector thread.
 class DataCollector (threading.Thread):
@@ -99,3 +95,4 @@ class DataCollector (threading.Thread):
             MemPool = open("MemPool.csv", "a")
             MemPool.write("%s,%s,MemPool"% (str(int(time())-genesis),str(memPool())))
             MemPool.close()
+'''

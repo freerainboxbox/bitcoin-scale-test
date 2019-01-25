@@ -28,7 +28,10 @@ This version requires the command node to be large enough to handle
 120 RPC requests per second, plus dependent variable I/O.
 '''
 
+def main():
+    pass
 
+'''
 def main():
     # Seed the RNG through GnuPG
     rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
@@ -87,6 +90,6 @@ def collect(tocollect):
     if start:
         for thread in threads:
             thread.start()
-    
+'''
 if __name__ == "__main__":
     main()

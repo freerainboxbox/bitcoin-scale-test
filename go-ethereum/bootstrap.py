@@ -2,17 +2,24 @@
 # Preamble
 import random as rng
 from nodetools import getIP, getAddr, getPriv, conn
+from settings import enode
 from os import system
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+#from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from web3 import Web3,personal,HTTPProvider
 
 '''
 This script bootstraps the network.
 1. Give each node their vanity private key.
-2. Have node 1 mine 1322 blocks.
-3. Send 14.8 BTC to every node.
+2. Connects each peer to 8 other peers.
 '''
 
+def main():
+    for i in range(1,1001):
+        web3 = Web3(HTTPProvider("http://"+getIP(i)))
+        web3.personal.importRawKey(getPriv(i),None)
 
+
+'''
 def main():
     for i in range(1, 1001):
         # Import respective private keys to nodes
@@ -37,7 +44,7 @@ def main():
     # Height 1323
     conn(1).generatetoaddress(
             1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
-
+'''
 
 if __name__ == "__main__":
     main()
