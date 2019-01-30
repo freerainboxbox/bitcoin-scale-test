@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Preamble
 import random as rng
-from nodetools import getIP, getAddr, getPriv, conn
+from nodetools import getIP, getAddr, getPriv
 from settings import enode
 from os import system
 #from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -14,9 +14,20 @@ This script bootstraps the network.
 '''
 
 def main():
+    # TODO: Test logic of bootstrap.
     for i in range(1,1001):
-        web3 = Web3(HTTPProvider("http://"+getIP(i)))
-        web3.personal.importRawKey(getPriv(i),None)
+        provider = Web3(HTTPProvider("http://"+getIP(i)))
+        provider.personal.importRawKey(getPriv(i),None)
+        print("Imported Private Key: %s" %s str(i))
+    for i in range(1,1001):
+        provider = Web3(HTTPProvider("http://"+getIP(i)))
+        allpeers = [peeriter for peeriter in range(1,1001) if peeriter != i]
+        # Geth connects to 25 peers by default.
+        peers = rng.sample(allpeers,25)
+        for peer in peers:
+            provider.admin.addpeer(enode[peer])
+            print("%s => %s" (str(i),str(peer)))
+            print(enode[peer])
 
 
 '''
