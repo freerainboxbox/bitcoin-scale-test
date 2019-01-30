@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 # Preamble
 from subprocess import check_output
-from nodetools import conn
 from statistics import median
 from math import floor
 from time import time
+from bitcoinrpc.authproxy import AuthServiceProxy,JSONRPCException
 import random as rng
 import socket
 
@@ -15,6 +15,34 @@ Atomic Minimum Fee (AtomMinFee)
 Atomic Median Fee (AtomMedFee)
 Unconfirmed Transaction Pool Size (MemPool)
 '''
+
+# Must be included to prevent cyclic import.
+def conn(node):
+    # Set python-bitcoinrpc credentials
+    return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
+
+# Must be included to prevent cyclic import.
+def getIP(node):
+    # Generate IP to query from subnet 10.142.0.0/20 (1000 IPs)
+    if node != None:
+        # From 10.142.0.2 to 10.142.0.255
+        if 1 <= node <= 254:
+            nodeip = "10.142.0."+str(1+node)
+        # From 10.142.1.0 to 10.142.1.255
+        elif 255 <= node <= 510:
+            nodeip = "10.142.1."+str(node-255)
+        # From 10.142.2.0 to 10.142.2.255
+        elif 511 <= node <= 766:
+            nodeip = "10.142.2."+str(node-511)
+        # From 10.142.3.0 to 10.142.3.171
+        elif 767 <= node <= 938:
+            nodeip = "10.142.3."+str(node-767)
+        # From 10.142.15.192 to 10.142.15.253
+        elif 939 <= node <= 1000:
+            nodeip = "10.142.15."+str(node-747)
+        else:
+            print("node is out of range.")
+        return nodeip
 
 # AtomMinFee estimator
 # Likely will not return any data until the mempool size can stay large enough for the fee estimator to work.
