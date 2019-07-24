@@ -47,8 +47,6 @@ def batchSend(tps):
         # Generate node IDs
         node[i] = rng.sample(range(1,1001),2)
         # Query node[i][0] to send 1 satoshi (new dust limit) to node[i][1]
-        #conn(nodes[0]).sendtoaddress(getAddr(nodes[1]), 0.00000001)
-        #return (str(nodes[0]), str(nodes[1]))
     for i in range(1,tps+1):
         txns[i] = RPCall(i, node[i][0], "sendtoaddress", (getAddr(node[i][1]),0.00000001),"From %s to %s" % (node[i][0],node[i][1]))
     for i in range(1,tps+1):

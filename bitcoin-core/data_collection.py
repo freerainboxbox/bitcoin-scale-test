@@ -150,7 +150,7 @@ def medFee(tps):
                             # Get output value
                             outvals.append(vout["value"])
                         # Calculate difference between inputs and outputs, yields fee
-                        feelist.append(sum(vins)-sum(vouts))
+                        feelist.append(sum(invals)-sum(outvals))
     if skipflag:
         # return median fee in satoshis
         return int(median(feelist) * 100000000)

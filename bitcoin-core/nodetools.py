@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Preamble
 import csv
-import threading
+import multiprocessing
 from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -54,7 +54,7 @@ def conn(node):
     return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
 
 # Class definition of an RPC call thread.
-class RPCall (threading.Thread):
+class RPCall (multiprocessing.Process):
     def __init__(self, reqnum, node, method, args, extra):
         # Request number within a second (from 1 to TPS interval)
         self.reqnum = int(reqnum)
@@ -66,13 +66,15 @@ class RPCall (threading.Thread):
         self.args = tuple(args)
         # Extra string to print at end
         self.extra = extra
-        # If request number is 0, the request is a generatetoaddress call.
+        # If request number is 0,
+        # the request is a generatetoaddress call.
         assert 0 <= self.reqnum <= 120
         assert 1 <= self.node <= 120
     def run(self):
         try:
             # TODO: Add logic for sending calls.
             conn(self.node).self.method(self.args)
+            print(self.extra)
             # Exit with 0, no exception (Not in use yet)
             return(self.node,self.method,self.args,0,None)
         except (JSONRPCException, socketerror) as e:
@@ -80,7 +82,7 @@ class RPCall (threading.Thread):
             return(self.node,self.method,self.args,1,str(e))
 
 # Class definition of a combined data collector thread.
-class DataCollector (threading.Thread):
+class DataCollector (multiprocessing.Process):
     def __init__(self, dependent, tps):
         self.dependent=int(dependent)
         self.tps=int(tps)
