@@ -70,21 +70,21 @@ def mine():
         return 0
 
 def collect(tocollect):
-    threads = []
+    processes = []
     if tocollect == 0:
         start = False
     elif tocollect == 1:
-        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
-        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
         start = True
     elif tocollect == 2:
-        threads.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
-        threads.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
-        threads.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        processes.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
+        processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
         start = True
     if start:
-        for thread in threads:
-            thread.start()
+        for process in processes:
+            process.start()
     
 if __name__ == "__main__":
     main()
