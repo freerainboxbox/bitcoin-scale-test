@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Preamble
 import csv
-import multiprocessing
+from multiprocessing import Process
 from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -54,8 +54,9 @@ def conn(node):
     return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332")
 
 # Class definition of an RPC call thread.
-class RPCall (multiprocessing.Process):
+class RPCall (Process):
     def __init__(self, reqnum, node, method, args, extra):
+        Process.__init__()
         # Request number within a second (from 1 to TPS interval)
         self.reqnum = int(reqnum)
         # Node Identifier
@@ -82,8 +83,9 @@ class RPCall (multiprocessing.Process):
             return(self.node,self.method,self.args,1,str(e))
 
 # Class definition of a combined data collector thread.
-class DataCollector (multiprocessing.Process):
+class DataCollector (Process):
     def __init__(self, dependent, tps):
+        Process.__init__()
         self.dependent=int(dependent)
         self.tps=int(tps)
         assert 1<=self.dependent<=3
