@@ -72,17 +72,21 @@ def mine():
 def collect(tocollect):
     processes = []
     if tocollect == 0:
+        # Collect nothing.
         start = False
     elif tocollect == 1:
+        # Collect mempool and MinFee
         processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
         processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
         start = True
     elif tocollect == 2:
+        # Collect mempool, MinFee, and MedFee.
         processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
         processes.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
         processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
         start = True
     if start:
+        # Start all processes
         for process in processes:
             process.start()
     
