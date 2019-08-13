@@ -10,21 +10,24 @@ This script bootstraps the network.
 1. Give each node their vanity private key.
 2. Have node 1 mine 1322 blocks.
 3. Send 14.8 BTC to every node.
+
+As a bootstrap script, this does not require concurrency.
+Pull requests to add concurrency are welcome, but not necessary.
 '''
 
 
 def main():
     while True:
         choice = input("Proceed to import keys? [Y/n] ")
-        if choice.upper() == "Y": 
+        if choice.upper() == "Y":
             for i in range(1, 1001):
                 # Import respective private keys to nodes
-                conn(i).importprivkey(getPriv(i))
+                conn(i, "importprivatekey", (getPriv(i)), 0, "")
                 # Set peer list to 0
                 # Connect node to 8 peers
-                peers = rng.sample(range(1,1001),8)
+                peers = rng.sample(range(1, 1001), 8)
                 for peer in peers:
-                    conn(i).addnode(getIP(peer)+':8333','add')
+                    conn(i, "addnode", (getIP(peer) + ':8333', 'add'), 0, "")
                     print("%s ==> %s" % (str(i), str(peer)))
             print("P2P bootstrapped.")
             break
@@ -36,9 +39,9 @@ def main():
     # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 BTC.
     while True:
         choice = input("Proceed to mine 1322 blocks? [Y/n] ")
-        if choice.upper() == "Y": 
-            conn(1).generatetoaddress(
-                1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
+        if choice.upper() == "Y":
+            conn(1, 'generatetoaddress',
+                 (1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             print("Mined 1322")
             break
         elif choice.upper() == "N":
@@ -49,21 +52,20 @@ def main():
     # Endow each address with 14.8 BTC.
     # Each transaction has 10 outputs, 100 transactions total.
     for i in range(0, 1000, 10):
-        conn(1).sendmany("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
-            i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8})
-    # Height 1323
+        conn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
+            i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8}), 0, "")
+        # Height 1323
     while True:
         choice = input("Proceed to mine #1323? [Y/n] ")
-        if choice.upper() == "Y": 
-            conn(1).generatetoaddress(
-                1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh')
+        if choice.upper() == "Y":
+            conn(1, 'generatetoaddress',
+                 (1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             break
         elif choice.upper() == "N":
             print("Skipped.")
             break
         else:
             print("Enter 'Y' or 'n'.\n")
-    
 
 
 if __name__ == "__main__":

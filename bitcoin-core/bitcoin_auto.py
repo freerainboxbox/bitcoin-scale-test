@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # Preamble
-from nodetools import getIP, getAddr, conn, RPCall, DataCollector
+from nodetools import getIP, getAddr, conn, localConn
+from data_collection import minFee, medFee, memPool
 # from os import system
 import random as rng
 from subprocess import check_output
@@ -8,7 +9,8 @@ from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
-from settings import genesis, timeout
+from settings import genesis, timeout, size, starttps
+from multiprocessing import Process, Pool
 
 '''
 This script automates data collection and transaction gossip.
@@ -41,26 +43,25 @@ def main():
 
 # Originally called query()
 def batchSend(tps):
-    txns = {}
-    node = {}
+    txns = Pool(processes=tps)
+    node = []
+    parameters = []
     for i in range(1,tps+1):
         # Generate node IDs
-        node[i] = rng.sample(range(1,1001),2)
-        # Query node[i][0] to send 1 satoshi (new dust limit) to node[i][1]
-    for i in range(1,tps+1):
-        txns[i] = RPCall(i, node[i][0], "sendtoaddress", (getAddr(node[i][1]),0.00000001),"From %s to %s" % (node[i][0],node[i][1]))
-    for i in range(1,tps+1):
-        txns[i].start()
-        sleep(1/tps)
+        node[i] = rng.sample(range(1,size),2)
+        # Build parameters list for pool object
+        parameters.append((node[i][0],"sendtoaddress",(getAddr(node[i][1]),0.00000001),i/tps,"From %s to %s\n" % (node[i][0],node[i][1])))
+    txns.map(conn, parameters)
 
 
 def mine():
     if (int(time())-genesis) % 600 == 0:
         nodemine = rng.randint(1,1001)
-        generate = RPCall(0,nodemine,"generatetoaddress",(1,getAddr(nodemine)),"Mined by %s" % str(nodemine))
+        #generate = RPCall(0,nodemine,"generatetoaddress",(1,getAddr(nodemine)),"Mined by %s" % str(nodemine))
+        generate = Process(target=conn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
         generate.start()
         generate.join()
-        if (conn(nodemine).getblockchaininfo()["blocks"]) - 1323 % 6 == 0:
+        if conn(nodemine,"getblockcount",(),0,"")["result"] - 1323 % 6 == 0:
             return 2
         else:
             return 1
@@ -75,15 +76,16 @@ def collect(tocollect):
         # Collect nothing.
         start = False
     elif tocollect == 1:
-        # Collect mempool and MinFee
-        processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
-        processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        # Collect MinFee (1) and MemPool (3)
+        #processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        processes.append(Process(target=minFee))
+        processes.append(Process(target=memPool))
         start = True
     elif tocollect == 2:
-        # Collect mempool, MinFee, and MedFee.
-        processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
-        processes.append(DataCollector(2,floor((int(time())-genesis)/3600+1)))
-        processes.append(DataCollector(3,floor((int(time())-genesis)/3600+1)))
+        # Collect MinFee (1) MedFee(2) and MemPool (3)
+        processes.append(Process(target=minFee))
+        processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1)))))
+        processes.append(Process(target=memPool))
         start = True
     if start:
         # Start all processes
