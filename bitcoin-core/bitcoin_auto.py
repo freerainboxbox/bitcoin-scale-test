@@ -41,7 +41,6 @@ def main():
         collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 
-# Originally called query()
 def batchSend(tps):
     txns = Pool(processes=tps)
     node = []
@@ -56,8 +55,7 @@ def batchSend(tps):
 
 def mine():
     if (int(time())-genesis) % 600 == 0:
-        nodemine = rng.randint(1,1001)
-        #generate = RPCall(0,nodemine,"generatetoaddress",(1,getAddr(nodemine)),"Mined by %s" % str(nodemine))
+        nodemine = rng.randint(1,size+1)
         generate = Process(target=conn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
         generate.start()
         generate.join()

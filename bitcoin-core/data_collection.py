@@ -25,20 +25,20 @@ def minFee():
     rawfee = []
     fee = []
     # Get fee for all nodes (maximum wait time is 1008 blocks)
-    for i in range(1, 1001):
+    for i in range(1, size+1):
         try:
             #rawfee.append(conn(i).estimatesmartfee(1008))
             rawfee.append(conn(i, "estimatesmartfee", (1008), 0, ""))
         except socket.error:
             print("Trouble getting minfee from node %s, skipping." % str(i))
-    for i in range(0, 1000):
+    for i in range(0, size):
         try:
             # When the mempool isn't large enough
             if rawfee[i]["errors"] == ['Insufficient data or no feerate found']:
                 pass
             else:
                 # get fee list
-                for j in range(0, 1000):
+                for j in range(0, size):
                     fee.append(rawfee[j]['feerate'] * 100000000)
                 # output median of fee list in satoshis
                 return int(median(fee))
@@ -57,7 +57,7 @@ def medFee(tps):
     startht = tps * 6 + 1323
     # Get data from 3 nodes
     while True:
-        nodes = rng.sample(range(1, 1001), 3)
+        nodes = rng.sample(range(1, size+1), 3)
         for i in nodes:
             feelist = []
             # Serialized block with txhashes
@@ -73,14 +73,13 @@ def medFee(tps):
                 # Get serialized block
                 while True:
                     try:
-                        # Modulo 1000 to prevent node selection out of range.
-                        #rawblock = conn((i + badnode) % 1000).getblock(conn((i + badnode) % 1000).getblockhash(j))
+                        # Modulo network size to prevent node selection out of range.
                         rawblock = conn(
-                            (i+badnode) % 1000, "getblock", (conn((i+badnode) % 1000, "getblockhash", (j), 0, "")), 0, "")
+                            (i+badnode) % size, "getblock", (conn((i+badnode) % size, "getblockhash", (j), 0, "")), 0, "")
                         break
                     except socket.error:
                         print("Problem getting block from %s, retrying." %
-                              str((i + badnode) % 1000))
+                              str((i + badnode) % size))
                         badnode += 1
                 # Get transaction hash list
                 txlist = rawblock["tx"]
@@ -93,13 +92,12 @@ def medFee(tps):
                     while True:
                         # Get raw transaction
                         try:
-                            #tx = conn((i + badnode) % 1000).getrawtransaction(txhash, 1)
-                            tx = conn((i+badnode) % 1000,
+                            tx = conn((i+badnode) % size,
                                       "getrawtransaction", (txhash, 1), 0, "")
                             break
                         except socket.error:
                             print("Problem getting raw tx from %s, retrying." %
-                                  str((i + badnode) % 1000))
+                                  str((i + badnode) % size))
                             badnode += 1
                     # Get input and output objects
                     vins = tx["vin"]
@@ -115,13 +113,12 @@ def medFee(tps):
                                 # Get input value
                                 while True:
                                     try:
-                                        #invals.append(conn((i + badnode) % 1000).getrawtransaction(vinhash[k][0], 1)["vout"][vinhash[k][1]]["value"])
                                         invals.append(conn(
-                                            (i + badnode) % 1000, "getrawtransaction", (vinhash[k][0]), 0, "")["vout"][vinhash[k][1]]["value"])
+                                            (i + badnode) % size, "getrawtransaction", (vinhash[k][0]), 0, "")["vout"][vinhash[k][1]]["value"])
                                         break
                                     except socket.error:
                                         print("Problem getting input value of transaction from %s, retrying." % str(
-                                            (i + badnode) % 1000))
+                                            (i + badnode) % size))
                                         badnode += 1
                         except KeyError:
                             # If reference input is coinbase, it will most likely be the reason for a KeyError.
@@ -144,9 +141,8 @@ def medFee(tps):
 # Median mempool size (# of unconfirmed transactions)
 def memPool():
     size = []
-    for i in range(1, 1001):
+    for i in range(1, size+1):
         try:
-            #size.append(conn(i).getmempoolinfo()['size'])
             size.append(conn(i, "getmempoolinfo", (), 0, ""))
         except:
             print("Problem getting mempool size from %s, skipping." % str(i))

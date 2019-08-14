@@ -4,6 +4,7 @@ import random as rng
 from nodetools import getIP, getAddr, getPriv, conn
 from os import system
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from settings import size, starttps
 
 '''
 This script bootstraps the network.
@@ -20,12 +21,12 @@ def main():
     while True:
         choice = input("Proceed to import keys? [Y/n] ")
         if choice.upper() == "Y":
-            for i in range(1, 1001):
+            for i in range(1, size+1):
                 # Import respective private keys to nodes
                 conn(i, "importprivatekey", (getPriv(i)), 0, "")
                 # Set peer list to 0
                 # Connect node to 8 peers
-                peers = rng.sample(range(1, 1001), 8)
+                peers = rng.sample(range(1, size+1), 8)
                 for peer in peers:
                     conn(i, "addnode", (getIP(peer) + ':8333', 'add'), 0, "")
                     print("%s ==> %s" % (str(i), str(peer)))
@@ -51,7 +52,7 @@ def main():
             print("Enter 'Y' or 'n'.\n")
     # Endow each address with 14.8 BTC.
     # Each transaction has 10 outputs, 100 transactions total.
-    for i in range(0, 1000, 10):
+    for i in range(0, size, 10):
         conn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
             i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8}), 0, "")
         # Height 1323
