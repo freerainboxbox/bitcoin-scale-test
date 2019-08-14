@@ -5,7 +5,6 @@ from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from socket import error as socketerror
-from data_collection import minFee, medFee, memPool
 from time import time, sleep
 
 # These are some functions used for getting data about nodes themselves.
@@ -53,11 +52,20 @@ def conn(node, method, args, delay, debug):
     #All data collectors will have 0 delay.
     sleep(delay)
     print(debug, end="")
-    return AuthServiceProxy("http://"+"test:test@"+getIP(node)+":8332").method(args)
+    if type(args) is str:
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
+    elif type(args) is tuple:
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,args)
+    return exec(proxy)
 
 
-def localConn(node, method, args, delay, debug):
+def conn(node, method, args, delay, debug):
     #For local testing, all JSON-RPC listener ports are node+23000.
     sleep(delay)
     print(debug, end="")
-    return AuthServiceProxy("http://user:pw@127.0.0.1"+str(node+23000)).method(args)
+    if type(args) is str:
+        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args]))
+    elif type(args) is tuple:
+        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,args)
+    print(proxy)
+    return exec(proxy)

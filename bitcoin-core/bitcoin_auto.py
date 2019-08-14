@@ -36,7 +36,7 @@ def main():
     rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
-        batchSend((floor((int(time())-genesis)/3600+1)))
+        batchSend((floor((int(time())-genesis)/3600+1))+starttps)
         tocollect = mine()
         collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
@@ -47,16 +47,17 @@ def batchSend(tps):
     parameters = []
     for i in range(1,tps+1):
         # Generate node IDs
-        node[i] = rng.sample(range(1,size),2)
+        node.append(rng.sample(range(1,size),2))
         # Build parameters list for pool object
-        parameters.append((node[i][0],"sendtoaddress",(getAddr(node[i][1]),0.00000001),i/tps,"From %s to %s\n" % (node[i][0],node[i][1])))
-    txns.map(conn, parameters)
+        parameters.append((node[i-1][0],"sendtoaddress",(getAddr(node[i-1][1]),0.00000001),i/tps,"From %s to %s\n" % (node[i-1][0],node[i-1][1])))
+    print(parameters)
+    txns.starmap(localConn, parameters)
 
 
 def mine():
     if (int(time())-genesis) % 600 == 0:
         nodemine = rng.randint(1,size+1)
-        generate = Process(target=conn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
+        generate = Process(target=localConn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
         generate.start()
         generate.join()
         if conn(nodemine,"getblockcount",(),0,"")["result"] - 1323 % 6 == 0:
@@ -75,14 +76,14 @@ def collect(tocollect):
         start = False
     elif tocollect == 1:
         # Collect MinFee (1) and MemPool (3)
-        #processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)))
+        #processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)+starttps))
         processes.append(Process(target=minFee))
         processes.append(Process(target=memPool))
         start = True
     elif tocollect == 2:
         # Collect MinFee (1) MedFee(2) and MemPool (3)
         processes.append(Process(target=minFee))
-        processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1)))))
+        processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1))+starttps)))
         processes.append(Process(target=memPool))
         start = True
     if start:

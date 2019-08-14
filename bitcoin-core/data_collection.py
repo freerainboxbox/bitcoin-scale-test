@@ -8,6 +8,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy,JSONRPCException
 import random as rng
 import socket
 from nodetools import conn, localConn, getIP
+from settings import size
 
 '''
 These functions collect the dependent variables (DVs).
@@ -27,7 +28,6 @@ def minFee():
     # Get fee for all nodes (maximum wait time is 1008 blocks)
     for i in range(1, size+1):
         try:
-            #rawfee.append(conn(i).estimatesmartfee(1008))
             rawfee.append(conn(i, "estimatesmartfee", (1008), 0, ""))
         except socket.error:
             print("Trouble getting minfee from node %s, skipping." % str(i))
