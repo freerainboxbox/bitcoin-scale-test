@@ -31,7 +31,7 @@ def main():
                 # localConnect node to 8 peers
                 peers = rng.sample(range(1, size+1), 8)
                 ###############################################################################
-                # Be sure to comment out the line 36 and uncomment line 37 for local testing! #
+                # Be sure to comment out the line 37 and uncomment line 38 for local testing! #
                 ###############################################################################
                 for peer in peers:
                     conn(i, "addnode", (str(getIP(peer))+":8333", 'add'), 0, "")
