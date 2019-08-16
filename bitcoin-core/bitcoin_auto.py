@@ -36,7 +36,7 @@ def main():
     rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
-        batchSend((floor((int(time())-genesis)/3600+1))+starttps)
+        batchSend((floor((int(time())-genesis)/3600))+starttps)
         tocollect = mine()
         collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
