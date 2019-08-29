@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # Preamble
+import asyncio
 from subprocess import check_output
 from statistics import median
 from math import floor
@@ -7,7 +8,7 @@ from time import time
 from bitcoinrpc.authproxy import AuthServiceProxy,JSONRPCException
 import random as rng
 import socket
-from nodetools import conn, localConn, getIP
+from nodetools import syncConn, syncLocalConn, getIP
 from settings import size, genesis
 
 '''
@@ -29,7 +30,7 @@ def minFee():
     # Get fee for all nodes (maximum wait time is 1008 blocks)
     for i in range(1, size+1):
         try:
-            rawfee.append(conn(i, "estimatesmartfee", (1008), 0, ""))
+            rawfee.append(syncConn(i, "estimatesmartfee", (1008), 0, ""))
         except socket.error:
             print("Trouble getting minfee from node %s, skipping." % str(i))
             datapt.close()
@@ -78,8 +79,8 @@ def medFee(tps):
                 while True:
                     try:
                         # Modulo network size to prevent node selection out of range.
-                        rawblock = conn(
-                            (i+badnode) % size, "getblock", (conn((i+badnode) % size, "getblockhash", (j), 0, "")), 0, "")
+                        rawblock = syncConn(
+                            (i+badnode) % size, "getblock", (syncConn((i+badnode) % size, "getblockhash", (j), 0, "")), 0, "")
                         break
                     except socket.error:
                         print("Problem getting block from %s, retrying." %
@@ -96,7 +97,7 @@ def medFee(tps):
                     while True:
                         # Get raw transaction
                         try:
-                            tx = conn((i+badnode) % size,
+                            tx = syncConn((i+badnode) % size,
                                       "getrawtransaction", (txhash, 1), 0, "")
                             break
                         except socket.error:
@@ -117,7 +118,7 @@ def medFee(tps):
                                 # Get input value
                                 while True:
                                     try:
-                                        invals.append(conn(
+                                        invals.append(syncConn(
                                             (i + badnode) % size, "getrawtransaction", (vinhash[k][0]), 0, "")["vout"][vinhash[k][1]]["value"])
                                         break
                                     except socket.error:
@@ -149,7 +150,7 @@ def memPool():
     datapt = open("MemPool.csv","a+")
     for i in range(1, size+1):
         try:
-            size.append(conn(i, "getmempoolinfo", (), 0, ""))
+            size.append(syncConn(i, "getmempoolinfo", (), 0, ""))
         except:
             print("Problem getting mempool size from %s, skipping." % str(i))
     datapt.write("%s,%s\n" % (str(int(time())-genesis),str(int(median(size)))))

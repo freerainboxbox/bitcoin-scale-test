@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 # Preamble
 import csv
+import asyncio
+import concurrent.futures
 from settings import genesis, timeout
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from socket import error as socketerror
-from time import time, sleep
+from time import time
+from time import sleep as tsleep
 
 # These are some functions used for getting data about nodes themselves.
 
@@ -46,26 +49,50 @@ def getPriv(node):
         addrlist = list(csv.reader(addresses))
         return addrlist[node][2]
 
+# All data collectors and bootstrappers will have 0 delay.
+# For local testing, all JSON-RPC listener ports are node+23000.
+# tsleep() must be used to block the event loop, but await the return value to prevent extra stalling.
 
-def conn(node, method, args, delay, debug):
-    # Set python-bitcoinrpc credentials
-    #All data collectors will have 0 delay.
-    sleep(delay)
+async def conn(node, method, args, delay, debug):
+    # Set python-bitcoinrpc credentials for production and return Future
+    print(debug, end="")
+    loop = asyncio.get_running_loop()
+    if type(args) is str:
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
+    elif type(args) is tuple:
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,args)
+    tsleep(delay)
+    return await asyncio.gather(loop.run_in_executor(None, exec, proxy))
+
+
+async def localConn(node, method, args, delay, debug):
+    # Set python-bitcoinrpc credentials for local and return Future
+    print(debug, end="")
+    loop = asyncio.get_running_loop()
+    if type(args) is str:
+        proxy = ('AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args])),)
+    elif type(args) is tuple:
+        proxy = ('AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,args),)
+    tsleep(delay)
+    return await asyncio.gather(loop.run_in_executor(None, exec, proxy))
+
+def syncConn(node, method, args, delay, debug):
+    # Set python-bitcoinrpc credentials for production and return RPC object
     print(debug, end="")
     if type(args) is str:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,args)
+    tsleep(delay)
     return exec(proxy)
 
-
-def conn(node, method, args, delay, debug):
-    #For local testing, all JSON-RPC listener ports are node+23000.
-    sleep(delay)
+def syncLocalConn(node, method, args, delay, debug):
+    # Set python-bitcoinrpc credentials for local and return RPC object
     print(debug, end="")
+    tsleep(delay)
     if type(args) is str:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args]))
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,args)
-    print(proxy)
+    tsleep(delay)
     return exec(proxy)

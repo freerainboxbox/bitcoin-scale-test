@@ -9,8 +9,10 @@ from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
-from settings import genesis, timeout, size, starttps
+from settings import genesis, timeout, size, starttps, parameters
 from multiprocessing import Process, Pool
+import asyncio
+import concurrent.futures
 
 '''
 This script automates data collection and transaction gossip.
@@ -31,35 +33,24 @@ This version requires the command node to be large enough to handle
 '''
 
 
-def main():
+async def main():
     # Seed the RNG through GnuPG
     rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
-        batchSend((floor((int(time())-genesis)/3600))+starttps)
-        tocollect = mine()
-        collect(tocollect)
+        await asyncio.run(batchSend((floor((int(time())-genesis)/3600))+starttps))
+        await collect(asyncio.gather(mine()))
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 
-def batchSend(tps):
-    txns = Pool(processes=tps)
+async def batchSend(tps):
     node = []
-    parameters = []
-    for i in range(1,tps+1):
-        # Generate node IDs
-        node.append(rng.sample(range(1,size),2))
-        # Build parameters list for pool object
-        parameters.append((node[i-1][0],"sendtoaddress",(getAddr(node[i-1][1]),0.00000001),i/tps,"From %s to %s\n" % (node[i-1][0],node[i-1][1])))
-    print(parameters)
-    txns.starmap(localConn, parameters)
+    for i in parameters.get(tps):
+        await asyncio.run(conn(*i))
 
-
-def mine():
+async def mine():
     if (int(time())-genesis) % 600 == 0:
         nodemine = rng.randint(1,size+1)
-        generate = Process(target=localConn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
-        generate.start()
-        generate.join()
+        await conn(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine))
         if conn(nodemine,"getblockcount",(),0,"")["result"] - 1323 % 6 == 0:
             return 2
         else:
@@ -69,27 +60,28 @@ def mine():
     else:
         return 0
 
-def collect(tocollect):
-    processes = []
-    if tocollect == 0:
-        # Collect nothing.
-        start = False
-    elif tocollect == 1:
-        # Collect MinFee (1) and MemPool (3)
-        #processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)+starttps))
-        processes.append(Process(target=minFee))
-        processes.append(Process(target=memPool))
-        start = True
-    elif tocollect == 2:
-        # Collect MinFee (1) MedFee(2) and MemPool (3)
-        processes.append(Process(target=minFee))
-        processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1))+starttps)))
-        processes.append(Process(target=memPool))
-        start = True
-    if start:
-        # Start all processes
-        for process in processes:
-            process.start()
-    
+async def noCollect():
+    pass
+
+async def twoCollect():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None,minFee)
+    await loop.run_in_executor(None,memPool)
+
+async def threeCollect():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None,minFee)
+    await loop.run_in_executor(None,medFee,((floor((int(time())-genesis)/3600+1))+starttps,))
+    await loop.run_in_executor(None,memPool())
+
+async def collect(tocollect):
+    loop = asyncio.get_running_loop()
+    cSwitch = {
+        0: noCollect,
+        1: twoCollect,
+        2: threeCollect,
+    }
+    asyncio.run(cSwitch.get(tocollect)())
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

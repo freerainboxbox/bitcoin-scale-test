@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # Preamble
+import asyncio
 import random as rng
-from nodetools import getIP, getAddr, getPriv, localConn
+from nodetools import getIP, getAddr, getPriv, syncConn, syncLocalConn
 from os import system
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from settings import size, starttps
@@ -15,8 +16,8 @@ This script bootstraps the network.
 As a bootstrap script, this does not require concurrency.
 Pull requests to add concurrency are welcome, but not necessary.
 
-If you are local testing (using multistart.sh),replace every instance
-of conn() with localConn() after the preamble, for every file.
+If you are local testing (using multistart.sh), replace every instance
+of syncConn() with syncLocalConn() after the preamble, for every file (except for lines 37-38).
 '''
 
 
@@ -26,7 +27,7 @@ def main():
         if choice.upper() == "Y":
             for i in range(1, size+1):
                 # Import respective private keys to nodes
-                conn(i, "importprivkey", (getPriv(i)), 0, "")
+                syncConn(i, "importprivkey", (getPriv(i)), 0, "")
                 # Set peer list to 0
                 # localConnect node to 8 peers
                 peers = rng.sample(range(1, size+1), 8)
@@ -34,8 +35,8 @@ def main():
                 # Be sure to comment out the line 37 and uncomment line 38 for local testing! #
                 ###############################################################################
                 for peer in peers:
-                    conn(i, "addnode", (str(getIP(peer))+":8333", 'add'), 0, "")
-                    #conn(i, "addnode", ("127.0.0.1:"+str(22000+peer), 'add'), 0, "")
+                    syncConn(i, "addnode", (str(getIP(peer))+":8333", 'add'), 0, "")
+                    #await syncLocalConn(i, "addnode", ("127.0.0.1:"+str(22000+peer), 'add'), 0, "")
                     print("%s ==> %s" % (str(i), str(peer)))
             print("P2P bootstrapped.")
             break
@@ -48,7 +49,7 @@ def main():
     while True:
         choice = input("Proceed to mine 1322 blocks? [Y/n] ")
         if choice.upper() == "Y":
-            conn(1, 'generatetoaddress',
+            syncConn(1, 'generatetoaddress',
                  (1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             print("Mined 1322")
             break
@@ -63,7 +64,7 @@ def main():
         choice = input("Endown all addresses? [Y/n] ")
         if choice.upper() == "Y":
             for i in range(0, size, 10):
-                conn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
+                syncConn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
                     i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8}), 0, "")
             break
         elif choice.upper() == "N":
@@ -75,7 +76,7 @@ def main():
     while True:
         choice = input("Proceed to mine #1323? [Y/n] ")
         if choice.upper() == "Y":
-            conn(1, 'generatetoaddress',
+            syncConn(1, 'generatetoaddress',
                  (1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             break
         elif choice.upper() == "N":
