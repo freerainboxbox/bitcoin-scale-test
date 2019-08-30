@@ -68,27 +68,35 @@ def mine():
     else:
         return 0
 
-def collect(tocollect):
+# Collect nothing.
+def noCollect():
+    pass
+
+# Collect MinFee (1) and MemPool (3)
+def twoCollect():
     processes = []
-    if tocollect == 0:
-        # Collect nothing.
-        start = False
-    elif tocollect == 1:
-        # Collect MinFee (1) and MemPool (3)
-        #processes.append(DataCollector(1,floor((int(time())-genesis)/3600+1)+starttps))
-        processes.append(Process(target=minFee))
-        processes.append(Process(target=memPool))
-        start = True
-    elif tocollect == 2:
-        # Collect MinFee (1) MedFee(2) and MemPool (3)
-        processes.append(Process(target=minFee))
-        processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1))+starttps)))
-        processes.append(Process(target=memPool))
-        start = True
-    if start:
-        # Start all processes
-        for process in processes:
-            process.start()
-    
+    processes.append(Process(target=minFee))
+    processes.append(Process(target=memPool))
+    for process in processes:
+        process.start()
+
+# Collect MinFee (1) MedFee(2) and MemPool (3)
+def threeCollect():
+    processes = []
+    processes.append(Process(target=minFee))
+    processes.append(Process(target=medFee, args=((floor((int(time())-genesis)/3600+1))+starttps)))
+    processes.append(Process(target=memPool))
+    for process in processes:
+        process.start()
+
+cSwitch = {
+    0 : noCollect,
+    1 : twoCollect,
+    2 : threeCollect
+}
+
+def collect(tocollect):
+    cSwitch.get(tocollect)()
+
 if __name__ == "__main__":
     main()
