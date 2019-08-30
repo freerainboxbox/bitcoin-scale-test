@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 # Preamble
 import csv
-from settings import genesis, timeout
+from settings import genesis, timeout, starttps, size
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from socket import error as socketerror
 from time import time, sleep
+from math import floor
+from random import randint as rint
 
 # These are some functions used for getting data about nodes themselves.
 
@@ -56,10 +58,12 @@ def conn(node, method, args, delay, debug):
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,args)
-    return exec(proxy)
+    else:
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple(args))
+    return eval(proxy)
 
 
-def conn(node, method, args, delay, debug):
+def localConn(node, method, args, delay, debug):
     #For local testing, all JSON-RPC listener ports are node+23000.
     sleep(delay)
     print(debug, end="")
@@ -67,5 +71,13 @@ def conn(node, method, args, delay, debug):
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args]))
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,args)
-    print(proxy)
-    return exec(proxy)
+    else:
+        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple(args))
+    return eval(proxy)
+
+def tps():
+    return (floor((int(time())-genesis)/3600))+starttps
+
+def Pi():
+    print("%s-%s-%s" % (int(time()),genesis,(tps()-1)*3600))
+    return int(time())-genesis-(tps()-1)*3600

@@ -29,7 +29,7 @@ def minFee():
     # Get fee for all nodes (maximum wait time is 1008 blocks)
     for i in range(1, size+1):
         try:
-            rawfee.append(conn(i, "estimatesmartfee", (1008), 0, ""))
+            rawfee.append(localConn(i, "estimatesmartfee", (1008,), 0, ""))
         except socket.error:
             print("Trouble getting minfee from node %s, skipping." % str(i))
             datapt.close()
@@ -78,8 +78,8 @@ def medFee(tps):
                 while True:
                     try:
                         # Modulo network size to prevent node selection out of range.
-                        rawblock = conn(
-                            (i+badnode) % size, "getblock", (conn((i+badnode) % size, "getblockhash", (j), 0, "")), 0, "")
+                        rawblock = localConn(
+                            (i+badnode) % size, "getblock", (localConn((i+badnode) % size, "getblockhash", (j), 0, "")), 0, "")
                         break
                     except socket.error:
                         print("Problem getting block from %s, retrying." %
@@ -96,7 +96,7 @@ def medFee(tps):
                     while True:
                         # Get raw transaction
                         try:
-                            tx = conn((i+badnode) % size,
+                            tx = localConn((i+badnode) % size,
                                       "getrawtransaction", (txhash, 1), 0, "")
                             break
                         except socket.error:
@@ -117,7 +117,7 @@ def medFee(tps):
                                 # Get input value
                                 while True:
                                     try:
-                                        invals.append(conn(
+                                        invals.append(localConn(
                                             (i + badnode) % size, "getrawtransaction", (vinhash[k][0]), 0, "")["vout"][vinhash[k][1]]["value"])
                                         break
                                     except socket.error:
@@ -145,12 +145,12 @@ def medFee(tps):
 
 # Median mempool size (# of unconfirmed transactions)
 def memPool():
-    size = []
+    memSize = []
     datapt = open("MemPool.csv","a+")
     for i in range(1, size+1):
         try:
-            size.append(conn(i, "getmempoolinfo", (), 0, ""))
+            memSize.append(int(localConn(i, "getmempoolinfo", tuple(), 0, ""))["size"])
         except:
             print("Problem getting mempool size from %s, skipping." % str(i))
-    datapt.write("%s,%s\n" % (str(int(time())-genesis),str(int(median(size)))))
+    datapt.write("%s,%s\n" % (str(int(time())-genesis),str(int(median(memSize)))))
     datapt.close()

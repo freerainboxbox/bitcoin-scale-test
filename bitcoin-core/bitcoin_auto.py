@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # Preamble
-from nodetools import getIP, getAddr, conn, localConn
+from nodetools import getIP, getAddr, conn, localConn, tps, Pi
 from data_collection import minFee, medFee, memPool
 # from os import system
 import random as rng
@@ -9,7 +9,7 @@ from time import time, sleep
 from math import floor
 from data_collection import minFee, medFee, memPool
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
-from settings import genesis, timeout, size, starttps
+from settings import genesis, timeout, size, starttps, timeout, parameters
 from multiprocessing import Process, Pool
 
 '''
@@ -32,35 +32,34 @@ This version requires the command node to be large enough to handle
 
 
 def main():
-    # Seed the RNG through GnuPG
-    rng.seed(check_output(['gpg', '-a', '--gen-random', '1', '32']))
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
-        batchSend((floor((int(time())-genesis)/3600))+starttps)
+        batchSend(tps())
         tocollect = mine()
         collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 
+# pi is the offset from the start of the tps period as an integer. It ranges from 1 to 3600.
+# The formula for the transaction index within a TPS period is Pi*tps. The end of the range is (Pi+1)*tps
+
+def txnListGen(tps=tps()):
+    pi = Pi()
+    period = parameters.get(str(tps))
+    return period[(pi-1)*tps:pi*tps]
+
 def batchSend(tps):
     txns = Pool(processes=tps)
     node = []
-    parameters = []
-    for i in range(1,tps+1):
-        # Generate node IDs
-        node.append(rng.sample(range(1,size),2))
-        # Build parameters list for pool object
-        parameters.append((node[i-1][0],"sendtoaddress",(getAddr(node[i-1][1]),0.00000001),i/tps,"From %s to %s\n" % (node[i-1][0],node[i-1][1])))
-    print(parameters)
-    txns.starmap(localConn, parameters)
-
+    second = txnListGen()
+    txns.starmap_async(localConn,second)
 
 def mine():
-    if (int(time())-genesis) % 600 == 0:
-        nodemine = rng.randint(1,size+1)
+    if ((int(time())-genesis) % 600 == 0 and int(time()) != genesis):
+        nodemine = rng.randint(1,size)
         generate = Process(target=localConn, args=(nodemine,"generatetoaddress",(1,getAddr(nodemine)),0,"Mined by %s\n" % str(nodemine)))
         generate.start()
         generate.join()
-        if conn(nodemine,"getblockcount",(),0,"")["result"] - 1323 % 6 == 0:
+        if localConn(nodemine,"getblockcount",(),0,"") - 1323 % 6 == 0:
             return 2
         else:
             return 1

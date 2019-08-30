@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Preamble
 import random as rng
-from nodetools import getIP, getAddr, getPriv, localConn
+from nodetools import getIP, getAddr, getPriv, localConn, conn
 from os import system
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from settings import size, starttps
@@ -26,16 +26,16 @@ def main():
         if choice.upper() == "Y":
             for i in range(1, size+1):
                 # Import respective private keys to nodes
-                conn(i, "importprivkey", (getPriv(i)), 0, "")
+                localConn(i, "importprivkey", (getPriv(i)), 0, "")
                 # Set peer list to 0
-                # localConnect node to 8 peers
+                # Connect node to 8 peers
                 peers = rng.sample(range(1, size+1), 8)
                 ###############################################################################
                 # Be sure to comment out the line 37 and uncomment line 38 for local testing! #
                 ###############################################################################
                 for peer in peers:
-                    conn(i, "addnode", (str(getIP(peer))+":8333", 'add'), 0, "")
-                    #conn(i, "addnode", ("127.0.0.1:"+str(22000+peer), 'add'), 0, "")
+                    #conn(i, "addnode", (str(getIP(peer))+":8333", 'add'), 0, "")
+                    localConn(i, "addnode", ("127.0.0.1:"+str(22000+peer), 'add'), 0, "")
                     print("%s ==> %s" % (str(i), str(peer)))
             print("P2P bootstrapped.")
             break
@@ -44,12 +44,15 @@ def main():
             break
         else:
             print("Enter 'Y' or 'n'.\n")
-    # Mine 1322 blocks to node 1, 1222 blocks of immediately spendable rewards, 14949.99998350 BTC.
+    # Mine 1322 blocks to node 1, 1322 blocks of immediately spendable rewards, 14949.99998350 BTC.
     while True:
         choice = input("Proceed to mine 1322 blocks? [Y/n] ")
         if choice.upper() == "Y":
-            conn(1, 'generatetoaddress',
-                 (1322, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
+            for i in range(0,4):
+                localConn(1, 'generatetoaddress',
+                    (300, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
+            localConn(1, 'generatetoaddress',
+                (122, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             print("Mined 1322")
             break
         elif choice.upper() == "N":
@@ -63,7 +66,7 @@ def main():
         choice = input("Endown all addresses? [Y/n] ")
         if choice.upper() == "Y":
             for i in range(0, size, 10):
-                conn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
+                localConn(1, 'sendmany', ("", {getAddr(i+1): 14.8, getAddr(i+2): 14.8, getAddr(i+3): 14.8, getAddr(i+4): 14.8, getAddr(
                     i+5): 14.8, getAddr(i+6): 14.8, getAddr(i+7): 14.8, getAddr(i+8): 14.8, getAddr(i+9): 14.8, getAddr(i+10): 14.8}), 0, "")
             break
         elif choice.upper() == "N":
@@ -75,7 +78,7 @@ def main():
     while True:
         choice = input("Proceed to mine #1323? [Y/n] ")
         if choice.upper() == "Y":
-            conn(1, 'generatetoaddress',
+            localConn(1, 'generatetoaddress',
                  (1, 'mooo1TVU7edAhZNiwFAdjNarvgXQXsZYSh'), 0, "")
             break
         elif choice.upper() == "N":
