@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # Preamble
-from nodetools import getIP, getAddr, conn, localConn, tps, Pi
+from nodetools import getIP, getAddr, conn, localConn, tps, Pi, txnListGen, transactionLooper
 from data_collection import minFee, medFee, memPool
 # from os import system
 import random as rng
@@ -32,9 +32,13 @@ This version requires the command node to be large enough to handle
 
 
 def main():
+    proceed = 1
     while int(time()) <= timeout:
         # The input of batchSend() is equivalent to the current TPS. batchSend() should take 1 second to halt, but transactions may still be sending.
-        batchSend(tps())
+        # batchSend should only run once per TPS, then increases by one. The moment the TPS increases by one, batchSend will run again.
+        if proceed == tps():
+            batchSend(tps())
+            proceed += 1
         tocollect = mine()
         collect(tocollect)
     print("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
@@ -42,16 +46,9 @@ def main():
 # pi is the offset from the start of the tps period as an integer. It ranges from 1 to 3600.
 # The formula for the transaction index within a TPS period is Pi*tps. The end of the range is (Pi+1)*tps
 
-def txnListGen(tps=tps()):
-    pi = Pi()
-    period = parameters.get(str(tps))
-    return period[(pi-1)*tps:pi*tps]
-
 def batchSend(tps):
-    txns = Pool(processes=tps)
-    node = []
-    second = txnListGen()
-    txns.starmap_async(localConn,second)
+    for node in range(1,tps):
+        txns.starmap_async(transactionLooper,second)
 
 def mine():
     if ((int(time())-genesis) % 600 == 0 and int(time()) != genesis):

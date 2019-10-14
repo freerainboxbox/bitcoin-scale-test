@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Preamble
 import csv
-from settings import genesis, timeout, starttps, size
+from settings import genesis, timeout, starttps, size, parameters
 from subprocess import call
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from socket import error as socketerror
@@ -52,7 +52,7 @@ def getPriv(node):
 def conn(node, method, args, delay, debug):
     # Set python-bitcoinrpc credentials
     #All data collectors will have 0 delay.
-    sleep(delay)
+    #sleep(delay)
     print(debug, end="")
     if type(args) is str:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
@@ -62,10 +62,26 @@ def conn(node, method, args, delay, debug):
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple(args))
     return eval(proxy)
 
+def txnListGen(tps=tps()):
+    return parameters.get(str(tps))
+
+def transactionLooper(node,tps=tps()):
+    #The list of transactions in a second
+    period = txnListGen()
+    #The node number for this particular looper
+    offset = node - 1
+    # Nonce will be 3599 at max
+    # Example: For a TPS of 30, there are 30 nodes
+    # and a maximum offset of 29. 29+3599*30=107999,
+    # the range of period's index.
+    for nonce in range(0,3600):
+        conn(period[offset+nonce*tps])
+        sleep(1)
+    
 
 def localConn(node, method, args, delay, debug):
     #For local testing, all JSON-RPC listener ports are node+23000.
-    sleep(delay)
+    #sleep(delay)
     print(debug, end="")
     if type(args) is str:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args]))
