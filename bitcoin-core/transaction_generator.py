@@ -31,7 +31,7 @@ def paramGen(tps, parameters, bar):
         print("\n%s" % tps)
         print(parameters)
         return paramGen(tps, parameters, bar)
-        
+    else:
         bar.finish()
         print(json.dumps(parameters))
         return json.dumps(parameters)

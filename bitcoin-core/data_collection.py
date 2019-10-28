@@ -138,8 +138,8 @@ def medFee(tps):
                         # Calculate difference between inputs and outputs, yields fee
                         feelist.append(sum(invals)-sum(outvals))
     if skipflag:
-        # return median fee in satoshis
-        datapt.write("%s,%s\n" % (str(int(time())-genesis),str(int(median(feelist) * 100000000))))
+        # return tps and median fee in satoshis as line
+        datapt.write("%s,%s\n" % (str(floor((int(time())-genesis)/3600)),str(int(median(feelist) * 100000000))))
         datapt.close()
 
 
