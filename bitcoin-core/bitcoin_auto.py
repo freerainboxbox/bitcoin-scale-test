@@ -48,7 +48,8 @@ def main():
 
 def batchSend(tps):
     for node in range(1,tps):
-        txns.starmap_async(transactionLooper,second)
+        txns = Pool(processes=tps)
+        txns.starmap_async(transactionLooper,range(1,tps))
 
 def mine():
     if ((int(time())-genesis) % 600 == 0 and int(time()) != genesis):
