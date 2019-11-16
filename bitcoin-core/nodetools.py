@@ -55,11 +55,11 @@ def conn(node, method, args, delay, debug):
     #sleep(delay)
     print(debug, end="")
     if type(args) is str:
-        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple[args])
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,(args,))
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,args)
     else:
-        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,tuple(args))
+        proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,(args,))
     return eval(proxy)
 
 def txnListGen(tps=tps()):
@@ -84,11 +84,11 @@ def localConn(node, method, args, delay, debug):
     #sleep(delay)
     print(debug, end="")
     if type(args) is str:
-        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple([args]))
+        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,(args,))
     elif type(args) is tuple:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,args)
     else:
-        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,tuple(args))
+        proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,(args,))
     return eval(proxy)
 
 def tps():
