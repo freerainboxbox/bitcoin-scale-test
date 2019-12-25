@@ -9,9 +9,15 @@ from time import time, sleep
 from math import floor
 from random import randint as rint
 
+def tps():
+    return (floor((int(time())-genesis)/3600))+starttps
+
+def Pi():
+    print("%s-%s-%s" % (int(time()),genesis,(tps()-1)*3600))
+    return int(time())-genesis-(tps()-1)*3600
+
 # These are some functions used for getting data about nodes themselves.
-
-
+'''
 def getIP(node):
     # Generate IP to query from subnet 10.142.0.0/20 (1000 IPs)
     if node != None:
@@ -33,7 +39,11 @@ def getIP(node):
         else:
             print("node is out of range.")
         return nodeip
-
+'''
+def getIP(node):
+    with open("ipaddresses.csv") as ipaddresses:
+        iplist = list(*(csv.reader(ipaddresses)))
+        return iplist[node-1]
 
 def getAddr(node):
     # Retrieve address from vanity CSV store
@@ -53,7 +63,7 @@ def conn(node, method, args, delay, debug):
     # Set python-bitcoinrpc credentials
     #All data collectors will have 0 delay.
     #sleep(delay)
-    print(debug, end="")
+    print("%s,%s,%s,%s,%s" % (node, method, args, delay, debug))
     if type(args) is str:
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,(args,))
     elif type(args) is tuple:
@@ -62,8 +72,8 @@ def conn(node, method, args, delay, debug):
         proxy = 'AuthServiceProxy("http://test:test@%s:8332").%s%s' % (getIP(node),method,(args,))
     return eval(proxy)
 
-def txnListGen(tps=tps()):
-    return parameters.get(str(tps))
+def txnListGen():
+    return parameters.get(str(tps()))
 
 def transactionLooper(node,tps=tps()):
     #The list of transactions in a second
@@ -74,6 +84,7 @@ def transactionLooper(node,tps=tps()):
     # Example: For a TPS of 30, there are 30 nodes
     # and a maximum offset of 29. 29+3599*30=107999,
     # the range of period's index.
+    print("run of txloooper")
     for nonce in range(0,3600):
         conn(period[offset+nonce*tps])
         sleep(1)
@@ -90,10 +101,3 @@ def localConn(node, method, args, delay, debug):
     else:
         proxy = 'AuthServiceProxy("http://user:pw@127.0.0.1:%s").%s%s' % (node+23000,method,(args,))
     return eval(proxy)
-
-def tps():
-    return (floor((int(time())-genesis)/3600))+starttps
-
-def Pi():
-    print("%s-%s-%s" % (int(time()),genesis,(tps()-1)*3600))
-    return int(time())-genesis-(tps()-1)*3600

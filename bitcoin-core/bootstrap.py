@@ -25,6 +25,7 @@ def main():
         if choice.upper() == "Y":
             for i in range(1, size+1):
                 # Import respective private keys to nodes
+                print(str(getIP(i)))
                 conn(i, "importprivkey", (getPriv(i)), 0, "")
                 # Set peer list to 0
                 # Connect node to 8 peers
